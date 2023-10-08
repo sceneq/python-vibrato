@@ -2,6 +2,7 @@ use pyo3::{exceptions::PyValueError, prelude::*, types::PyUnicode};
 
 use hashbrown::HashMap;
 use ouroboros::self_referencing;
+use std::fs::File;
 use vibrato_rust::{
     dictionary::{LexType, WordIdx},
     tokenizer::worker::Worker,
@@ -193,9 +194,20 @@ struct Vibrato {
 #[pymethods]
 impl Vibrato {
     #[new]
-    #[pyo3(signature = (dict_data, /, ignore_space=false, max_grouping_len=0))]
-    pub fn new(dict_data: &[u8], ignore_space: bool, max_grouping_len: usize) -> PyResult<Self> {
-        let dict = Dictionary::read(dict_data).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    #[pyo3(signature = (dict_data, /, ignore_space=false, max_grouping_len=0, userlex_csv=None))]
+    pub fn new(
+        dict_data: &[u8],
+        ignore_space: bool,
+        max_grouping_len: usize,
+        userlex_csv: Option<&str>,
+    ) -> PyResult<Self> {
+        let mut dict =
+            Dictionary::read(dict_data).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        if let Some(userlex_csv) = userlex_csv {
+            dict = dict
+                .reset_user_lexicon_from_reader(Some(File::open(userlex_csv)?))
+                .map_err(|e| PyValueError::new_err(e.to_string()))?;
+        }
         let tokenizer = Tokenizer::new(dict)
             .ignore_space(ignore_space)
             .map_err(|e| PyValueError::new_err(e.to_string()))?

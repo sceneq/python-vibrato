@@ -19,7 +19,7 @@ class TokenList(Iterable[Token]):
 
 class Vibrato:
     def __init__(
-        self, dict_data: bytes, ignore_space: bool = False, max_grouping_len: int = 0
+        self, dict_data: bytes, ignore_space: bool = False, max_grouping_len: int = 0, userlex_csv = None
     ) -> None: ...
     @staticmethod
     def from_textdict(
